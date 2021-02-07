@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-FrameGenerator- Simple Generator
+FrameGenerator - Simple Generator
 --------------------------------------
 A simple frame generator that takes distributed frames from
 videos. It is useful for videos that are scaled from frame 0 to end
@@ -72,17 +72,17 @@ class FrameGenerator(Sequence):
     def __init__(
             self,
             rescale=1/255.,
-            nb_frames: int = 5,
-            classes: list = None,
+            nb_frames: int = 40,
+            classes: list = ["FAKE", "REAL"],
             batch_size: int = 16,
             use_frame_cache: bool = False,
-            target_shape: tuple = (224, 224),
+            target_shape: tuple = (299, 299),
             shuffle: bool = True,
             transformation: ImageDataGenerator = None,
             split_test: float = None,
             split_val: float = None,
             nb_channel: int = 3,
-            glob_pattern: str = './videos/{classname}/*.avi',
+            glob_pattern: str = './videos/*.avi',
             use_headers: bool = True,
             *args,
             **kwargs):
@@ -102,6 +102,7 @@ class FrameGenerator(Sequence):
 
         if classes is None:
             classes = self._discover_classes()
+            print("Classes are", classes)
 
         # we should have classes
         if len(classes) == 0:
@@ -204,8 +205,9 @@ class FrameGenerator(Sequence):
                           (cls, ", ".join(info), nbtrain))
 
             else:
-                for cls in classes:
-                    self.files += glob.glob(glob_pattern.format(classname=cls))
+                # for cls in classes:
+                    # self.files += glob.glob(glob_pattern.format(classname=cls))
+                self.files += glob.glob(glob_pattern)
 
         # build indexes
         self.files_count = len(self.files)
@@ -257,19 +259,19 @@ class FrameGenerator(Sequence):
         return total
 
     def _discover_classes(self):
-        pattern = os.path.realpath(self.glob_pattern)
-        pattern = re.escape(pattern)
-        pattern = pattern.replace('\\{classname\\}', '(.*?)')
-        pattern = pattern.replace('\\*', '.*')
+        # pattern = os.path.realpath(self.glob_pattern)
+        # pattern = re.escape(pattern)
+        # pattern = pattern.replace('\\{classname\\}', '(.*?)')
+        # pattern = pattern.replace('\\*', '.*')
 
-        files = glob.glob(self.glob_pattern.replace('{classname}', '*'))
-        classes = set()
-        for f in files:
-            f = os.path.realpath(f)
-            cl = re.findall(pattern, f)[0]
-            classes.add(cl)
+        # files = glob.glob(self.glob_pattern.replace('{classname}', '*'))
+        # classes = set()
+        # for f in files:
+        #     f = os.path.realpath(f)
+        #     cl = re.findall(pattern, f)[0]
+        #     classes.add(cl)
 
-        return list(classes)
+        return list("FAKE", "REAL")
 
     def next(self):
         """ Return next element"""
@@ -349,12 +351,12 @@ class FrameGenerator(Sequence):
                 transformation = self._random_trans[i]
 
             video = self.files[i]
-            classname = self._get_classname(video)
+            # classname = self._get_classname(video)
 
             # create a label array and set 1 to the right column
             label = np.zeros(len(classes))
-            col = classes.index(classname)
-            label[col] = 1.
+            # col = classes.index(classname)
+            # label[col] = 1.
 
             if video not in self.__frame_cache:
                 frames = self._get_frames(
@@ -382,7 +384,7 @@ class FrameGenerator(Sequence):
             images.append(frames)
             labels.append(label)
 
-        return np.array(images), np.array(labels)
+        return np.array(images)
 
     def _get_classname(self, video: str) -> str:
         """ Find classname from video filename following the pattern """
